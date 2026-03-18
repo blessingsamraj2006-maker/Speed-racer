@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ultra Car Game</title>
+<style>
+body {
+  margin: 0;
+  background: black;
+  text-align: center;
+  color: white;
+  font-family: Arial;
+}
+
+#game {
+  width: 300px;
+  height: 500px;
+  margin: auto;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid white;
+  background: repeating-linear-gradient(
+    to bottom,
+    #333 0px,
+    #333 40px,
+    #fff 40px,
+    #fff 60px
+  );
+}
+
+.car {
+  width: 50px;
+  height: 80px;
+  position: absolute;
+  bottom: 10px;
+  left: 125px;
+  background: url('https://i.imgur.com/7QZ7Z6F.png') no-repeat center/cover;
+}
+
+.enemy {
+  width: 50px;
+  height: 80px;
+  position: absolute;
+  top: -100px;
+  background: url('https://i.imgur.com/9Xn4K0F.png') no-repeat center/cover;
+}
+
+#score, #highScore {
+  margin: 5px;
+}
+
+#gameOver {
+  display: none;
+  position: absolute;
+  top: 180px;
+  width: 100%;
+  font-size: 22px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 5px 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="score">Score: 0</div>
+<div id="highScore">High Score: 0</div>
+
+<div id="game">
+  <div class="car" id="player"></div>
+  <div id="gameOver">
+    💥 Game Over <br>
+    <button onclick="restart()">Restart</button>
+  </div>
+</div>
+
+<button onclick="pauseGame()">Pause / Resume</button>
+
+<audio id="crashSound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+
+<script>
+let player = document.getElementById("player");
+let game = document.getElementById("game");
+let scoreText = document.getElementById("score");
+let highScoreText = document.getElementById("highScore");
+let gameOverBox = document.getElementById("gameOver");
+let crashSound = document.getElementById("crashSound");
+
+let playerX = 125;
+let score = 0;
+let speed = 5;
+let gameRunning = true;
+let paused = false;
+
+// Load high score
+let highScore = localStorage.getItem("highScore") || 0;
+highScoreText.innerText = "High Score: " + highScore;
+
+// Controls
+document.addEventListener("keydown", (e) => {
+  if (!gameRunning || paused) return;
+  if (e.key === "ArrowLeft" && playerX > 0) playerX -= 50;
+  if (e.key === "ArrowRight" && playerX < 250) playerX += 50;
+  player.style.left = playerX + "px";
+});
+
+// Mobile touch
+game.addEventListener("touchstart", (e) => {
+  if (!gameRunning || paused) return;
+  let x = e.touches[0].clientX;
+  let mid = window.innerWidth / 2;
+
+  if (x < mid && playerX > 0) playerX -= 50;
+  else if (x > mid && playerX < 250) playerX += 50;
+
+  player.style.left = playerX + "px";
+});
+
+function createEnemy() {
+  if (!gameRunning || paused) return;
+
+  let enemy = document.createElement("div");
+  enemy.classList.add("enemy");
+  enemy.style.left = Math.floor(Math.random() * 3) * 50 + "px";
+  game.appendChild(enemy);
+
+  let enemyY = -100;
+
+  let move = setInterval(() => {
+    if (!gameRunning || paused) return;
+
+    enemyY += speed;
+    enemy.style.top = enemyY + "px";
+
+    // Collision
+    if (
+      enemyY > 400 &&
+      parseInt(enemy.style.left) === playerX
+    ) {
+      crashSound.play();
+      gameOver();
+    }
+
+    if (enemyY > 500) {
+      enemy.remove();
+      score++;
+      speed += 0.3;
+      scoreText.innerText = "Score: " + score;
+      clearInterval(move);
+    }
+  }, 50);
+}
+
+function gameOver() {
+  gameRunning = false;
+  gameOverBox.style.display = "block";
+
+  if (score > highScore) {
+    localStorage.setItem("highScore", score);
+  }
+}
+
+function restart() {
+  location.reload();
+}
+
+function pauseGame() {
+  paused = !paused;
+}
+
+setInterval(createEnemy, 1000);
+</script>
+
+</body>
+</html>
